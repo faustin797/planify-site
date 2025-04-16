@@ -1,0 +1,1029 @@
+<section id="add-course" class="p-4 bg-gray-50 mb-8">
+  <h2 class="text-2xl font-bold mb-4">Ajouter un cours</h2>
+  <form id="courseForm" class="space-y-4">
+    <div>
+      <label for="courseName" class="block text-gray-700">Nom du cours</label>
+      <input type="text" id="courseName" class="border p-2 w-full" required>
+    </div>
+    <div>
+      <label for="courseTime" class="block text-gray-700">Heure (ex. 8h - 10h)</label>
+      <input type="text" id="courseTime" class="border p-2 w-full" required>
+    </div>
+    <div>
+      <label for="courseRoom" class="block text-gray-700">Salle</label>
+      <input type="text" id="courseRoom" class="border p-2 w-full" required>
+    </div>
+    <button type="submit" class="bg-primary text-white px-4 py-2 rounded-button">Ajouter</button>
+  </form>
+</section>
+<section id="planning" class="p-4">
+  <h2 class="text-2xl font-bold mb-4">Mon planning</h2>
+  <div id="planningContainer" class="space-y-4">
+    <!-- Les cours ajoutés vont s'afficher ici -->
+  </div>
+</section>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Planify - Créez vos plannings facilement</title>
+<script src="https://cdn.tailwindcss.com/3.4.16"></script>
+<script>tailwind.config={theme:{extend:{colors:{primary:'#4F46E5',secondary:'#8B5CF6'},borderRadius:{'none':'0px','sm':'4px',DEFAULT:'8px','md':'12px','lg':'16px','xl':'20px','2xl':'24px','3xl':'32px','full':'9999px','button':'8px'}}}}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+<style>
+:where([class^="ri-"])::before { content: "\f3c2"; }
+body {
+font-family: 'Inter', sans-serif;
+background-color: #f9fafb;
+}
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+-webkit-appearance: none;
+margin: 0;
+}
+input[type="number"] {
+-moz-appearance: textfield;
+}
+.custom-switch {
+position: relative;
+display: inline-block;
+width: 50px;
+height: 24px;
+}
+.custom-switch input {
+opacity: 0;
+width: 0;
+height: 0;
+}
+.slider {
+position: absolute;
+cursor: pointer;
+top: 0;
+left: 0;
+right: 0;
+bottom: 0;
+background-color: #e5e7eb;
+transition: .4s;
+border-radius: 34px;
+}
+.slider:before {
+position: absolute;
+content: "";
+height: 18px;
+width: 18px;
+left: 3px;
+bottom: 3px;
+background-color: white;
+transition: .4s;
+border-radius: 50%;
+}
+input:checked + .slider {
+background-color: #4F46E5;
+}
+input:checked + .slider:before {
+transform: translateX(26px);
+}
+.custom-radio {
+display: flex;
+align-items: center;
+cursor: pointer;
+}
+.custom-radio-input {
+appearance: none;
+width: 18px;
+height: 18px;
+border: 2px solid #d1d5db;
+border-radius: 50%;
+margin-right: 8px;
+position: relative;
+cursor: pointer;
+}
+.custom-radio-input:checked {
+border-color: #4F46E5;
+}
+.custom-radio-input:checked::after {
+content: "";
+position: absolute;
+top: 3px;
+left: 3px;
+width: 8px;
+height: 8px;
+border-radius: 50%;
+background-color: #4F46E5;
+}
+.custom-checkbox {
+display: flex;
+align-items: center;
+cursor: pointer;
+}
+.custom-checkbox-input {
+appearance: none;
+width: 18px;
+height: 18px;
+border: 2px solid #d1d5db;
+border-radius: 4px;
+margin-right: 8px;
+position: relative;
+cursor: pointer;
+}
+.custom-checkbox-input:checked {
+background-color: #4F46E5;
+border-color: #4F46E5;
+}
+.custom-checkbox-input:checked::after {
+content: "";
+position: absolute;
+top: 2px;
+left: 5px;
+width: 5px;
+height: 10px;
+border: solid white;
+border-width: 0 2px 2px 0;
+transform: rotate(45deg);
+}
+.custom-range {
+-webkit-appearance: none;
+width: 100%;
+height: 6px;
+background: #e5e7eb;
+border-radius: 5px;
+outline: none;
+}
+.custom-range::-webkit-slider-thumb {
+-webkit-appearance: none;
+appearance: none;
+width: 18px;
+height: 18px;
+border-radius: 50%;
+background: #4F46E5;
+cursor: pointer;
+}
+.custom-range::-moz-range-thumb {
+width: 18px;
+height: 18px;
+border-radius: 50%;
+background: #4F46E5;
+cursor: pointer;
+border: none;
+}
+.timeline-item::before {
+content: '';
+position: absolute;
+left: 15px;
+top: 0;
+bottom: 0;
+width: 2px;
+background-color: #e5e7eb;
+z-index: 0;
+}
+.timeline-item:last-child::before {
+height: 50%;
+}
+.timeline-item:first-child::before {
+top: 50%;
+}
+.timeline-dot {
+z-index: 1;
+position: relative;
+}
+.tab-active {
+color: #4F46E5;
+border-bottom: 2px solid #4F46E5;
+}
+.calendar-cell {
+min-height: 100px;
+transition: all 0.2s;
+}
+.calendar-cell:hover {
+background-color: #f3f4f6;
+}
+</style>
+</head>
+<body>
+<header class="bg-white shadow-sm">
+<div class="container mx-auto px-4 py-4 flex justify-between items-center">
+<div class="flex items-center">
+<h1 class="text-2xl font-['Pacifico'] text-primary mr-8">Planify</h1>
+<nav class="hidden md:flex space-x-6">
+<a href="#" class="text-gray-800 hover:text-primary font-medium">Accueil</a>
+<a href="#" class="text-gray-800 hover:text-primary font-medium">Fonctionnalités</a>
+<a href="#" class="text-gray-800 hover:text-primary font-medium">Tarifs</a>
+<a href="#" class="text-gray-800 hover:text-primary font-medium">Aide</a>
+</nav>
+</div>
+<div class="flex items-center space-x-4">
+<button class="text-gray-700 hover:text-primary px-4 py-2 rounded-button whitespace-nowrap">Se connecter</button>
+<button class="bg-primary text-white px-4 py-2 rounded-button hover:bg-opacity-90 transition whitespace-nowrap">S'inscrire</button>
+</div>
+</div>
+</header>
+<main>
+<section class="relative">
+<div class="absolute inset-0 bg-gradient-to-r from-white via-white to-transparent z-10"></div>
+<div class="absolute inset-0" style="background-image: url('https://readdy.ai/api/search-image?query=A%20modern%2C%20elegant%20workspace%20with%20a%20minimalist%20design.%20A%20clean%20desk%20with%20a%20computer%20showing%20a%20schedule%20planning%20app.%20Soft%20natural%20light%20coming%20through%20large%20windows%2C%20creating%20a%20productive%20atmosphere.%20The%20image%20should%20have%20a%20light%2C%20airy%20feel%20with%20subtle%20blue%20accents%20that%20match%20the%20app%20theme.%20No%20people%20visible.&width=1920&height=600&seq=hero1&orientation=landscape'); background-size: cover; background-position: center right; opacity: 0.9;"></div>
+<div class="container mx-auto px-4 py-20 relative z-20">
+<div class="max-w-2xl">
+<h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-6">Organisez votre temps comme jamais auparavant</h1>
+<p class="text-xl text-gray-700 mb-8">Créez des plannings personnalisés pour vos études, votre travail ou votre vie quotidienne avec notre outil intuitif et élégant.</p>
+<div class="flex flex-col sm:flex-row gap-4">
+<button class="bg-primary text-white px-6 py-3 rounded-button hover:bg-opacity-90 transition whitespace-nowrap flex items-center justify-center">
+<span class="mr-2">Commencer gratuitement</span>
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-arrow-right-line"></i>
+</div>
+</button>
+<button class="bg-white text-gray-800 border border-gray-300 px-6 py-3 rounded-button hover:bg-gray-50 transition whitespace-nowrap flex items-center justify-center">
+<div class="w-5 h-5 flex items-center justify-center mr-2">
+<i class="ri-play-line"></i>
+</div>
+<span>Voir la démo</span>
+</button>
+</div>
+</div>
+</div>
+</section>
+<section class="bg-white py-16">
+<div class="container mx-auto px-4">
+<div class="text-center mb-16">
+<h2 class="text-3xl font-bold text-gray-900 mb-4">Pourquoi choisir Planify ?</h2>
+<p class="text-xl text-gray-600 max-w-3xl mx-auto">Notre plateforme combine simplicité et puissance pour vous offrir la meilleure expérience de planification.</p>
+</div>
+<div class="grid md:grid-cols-3 gap-8">
+<div class="bg-gray-50 p-6 rounded-lg shadow-sm hover:shadow-md transition">
+<div class="w-12 h-12 bg-primary bg-opacity-10 rounded-full flex items-center justify-center mb-4">
+<div class="w-6 h-6 flex items-center justify-center text-primary">
+<i class="ri-palette-line"></i>
+</div>
+</div>
+<h3 class="text-xl font-semibold text-gray-900 mb-3">Personnalisation avancée</h3>
+<p class="text-gray-600">Adaptez vos plannings avec des thèmes, des couleurs et des dispositions qui vous correspondent parfaitement.</p>
+</div>
+<div class="bg-gray-50 p-6 rounded-lg shadow-sm hover:shadow-md transition">
+<div class="w-12 h-12 bg-primary bg-opacity-10 rounded-full flex items-center justify-center mb-4">
+<div class="w-6 h-6 flex items-center justify-center text-primary">
+<i class="ri-device-line"></i>
+</div>
+</div>
+<h3 class="text-xl font-semibold text-gray-900 mb-3">Multi-plateforme</h3>
+<p class="text-gray-600">Accédez à vos plannings depuis n'importe quel appareil avec une interface adaptée à chaque écran.</p>
+</div>
+<div class="bg-gray-50 p-6 rounded-lg shadow-sm hover:shadow-md transition">
+<div class="w-12 h-12 bg-primary bg-opacity-10 rounded-full flex items-center justify-center mb-4">
+<div class="w-6 h-6 flex items-center justify-center text-primary">
+<i class="ri-voice-recognition-line"></i>
+</div>
+</div>
+<h3 class="text-xl font-semibold text-gray-900 mb-3">Assistant vocal</h3>
+<p class="text-gray-600">Ajoutez des tâches et des événements à la voix pour une expérience encore plus fluide et rapide.</p>
+</div>
+</div>
+</div>
+</section>
+<section class="py-16 bg-gray-50">
+<div class="container mx-auto px-4">
+<div class="flex flex-col md:flex-row items-center gap-12">
+<div class="md:w-1/2">
+<h2 class="text-3xl font-bold text-gray-900 mb-6">Une interface intuitive pour tous vos besoins</h2>
+<p class="text-lg text-gray-600 mb-8">Notre interface a été conçue pour être à la fois puissante et facile à utiliser, que vous soyez étudiant, enseignant ou professionnel.</p>
+<div class="space-y-4">
+<div class="flex items-start">
+<div class="w-6 h-6 flex items-center justify-center text-primary mt-1 mr-3">
+<i class="ri-check-line"></i>
+</div>
+<p class="text-gray-700">Créez des plannings journaliers, hebdomadaires ou mensuels</p>
+</div>
+<div class="flex items-start">
+<div class="w-6 h-6 flex items-center justify-center text-primary mt-1 mr-3">
+<i class="ri-check-line"></i>
+</div>
+<p class="text-gray-700">Personnalisez les couleurs, les polices et les dispositions</p>
+</div>
+<div class="flex items-start">
+<div class="w-6 h-6 flex items-center justify-center text-primary mt-1 mr-3">
+<i class="ri-check-line"></i>
+</div>
+<p class="text-gray-700">Ajoutez des filigranes personnalisés pour protéger vos créations</p>
+</div>
+<div class="flex items-start">
+<div class="w-6 h-6 flex items-center justify-center text-primary mt-1 mr-3">
+<i class="ri-check-line"></i>
+</div>
+<p class="text-gray-700">Exportez en PDF ou partagez par lien en un clic</p>
+</div>
+</div>
+</div>
+<div class="md:w-1/2 rounded-lg overflow-hidden shadow-lg">
+<img src="https://readdy.ai/api/search-image?query=A%20clean%2C%20modern%20interface%20of%20a%20planning%20application%20with%20a%20weekly%20calendar%20view.%20The%20interface%20shows%20a%20well-organized%20schedule%20with%20color-coded%20events%2C%20elegant%20typography%2C%20and%20a%20minimalist%20design.%20The%20screen%20displays%20various%20planning%20tools%20and%20options%20in%20a%20user-friendly%20layout.%20The%20color%20scheme%20is%20primarily%20white%20with%20subtle%20blue%20accents%20matching%20the%20apps%20branding.&width=600&height=400&seq=interface1&orientation=landscape" alt="Interface Planify" class="w-full h-auto object-cover object-top">
+</div>
+</div>
+</div>
+</section>
+<section class="py-16 bg-white">
+<div class="container mx-auto px-4">
+<div class="text-center mb-12">
+<h2 class="text-3xl font-bold text-gray-900 mb-4">Fonctionnalités principales</h2>
+<p class="text-xl text-gray-600 max-w-3xl mx-auto">Découvrez les outils qui font de Planify la solution idéale pour organiser votre temps.</p>
+</div>
+<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+<div class="p-6 border border-gray-100 rounded-lg hover:shadow-md transition">
+<div class="w-10 h-10 flex items-center justify-center text-primary mb-4">
+<i class="ri-layout-4-line ri-xl"></i>
+</div>
+<h3 class="text-lg font-semibold text-gray-900 mb-2">Vues multiples</h3>
+<p class="text-gray-600">Alternez entre les vues tableau, liste ou calendrier selon vos préférences.</p>
+</div>
+<div class="p-6 border border-gray-100 rounded-lg hover:shadow-md transition">
+<div class="w-10 h-10 flex items-center justify-center text-primary mb-4">
+<i class="ri-palette-line ri-xl"></i>
+</div>
+<h3 class="text-lg font-semibold text-gray-900 mb-2">Personnalisation complète</h3>
+<p class="text-gray-600">Modifiez les couleurs, les polices et les styles pour créer un planning unique.</p>
+</div>
+<div class="p-6 border border-gray-100 rounded-lg hover:shadow-md transition">
+<div class="w-10 h-10 flex items-center justify-center text-primary mb-4">
+<i class="ri-history-line ri-xl"></i>
+</div>
+<h3 class="text-lg font-semibold text-gray-900 mb-2">Historique des versions</h3>
+<p class="text-gray-600">Retrouvez et restaurez les versions précédentes de vos plannings.</p>
+</div>
+<div class="p-6 border border-gray-100 rounded-lg hover:shadow-md transition">
+<div class="w-10 h-10 flex items-center justify-center text-primary mb-4">
+<i class="ri-share-line ri-xl"></i>
+</div>
+<h3 class="text-lg font-semibold text-gray-900 mb-2">Partage facile</h3>
+<p class="text-gray-600">Exportez en PDF ou partagez par lien avec vos collaborateurs.</p>
+</div>
+<div class="p-6 border border-gray-100 rounded-lg hover:shadow-md transition">
+<div class="w-10 h-10 flex items-center justify-center text-primary mb-4">
+<i class="ri-notification-3-line ri-xl"></i>
+</div>
+<h3 class="text-lg font-semibold text-gray-900 mb-2">Notifications</h3>
+<p class="text-gray-600">Recevez des rappels pour ne jamais manquer un événement important.</p>
+</div>
+<div class="p-6 border border-gray-100 rounded-lg hover:shadow-md transition">
+<div class="w-10 h-10 flex items-center justify-center text-primary mb-4">
+<i class="ri-attachment-2-line ri-xl"></i>
+</div>
+<h3 class="text-lg font-semibold text-gray-900 mb-2">Fichiers joints</h3>
+<p class="text-gray-600">Attachez des documents directement à vos événements et tâches.</p>
+</div>
+</div>
+</div>
+</section>
+<section class="py-16 bg-gray-50">
+<div class="container mx-auto px-4">
+<div class="text-center mb-12">
+<h2 class="text-3xl font-bold text-gray-900 mb-4">Découvrez notre interface</h2>
+<p class="text-xl text-gray-600 max-w-3xl mx-auto">Voici un aperçu de notre plateforme intuitive et élégante.</p>
+</div>
+<div class="bg-white rounded-xl shadow-lg overflow-hidden">
+<div class="border-b border-gray-200">
+<div class="flex p-4">
+<div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
+<div class="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
+<div class="w-3 h-3 bg-green-500 rounded-full"></div>
+</div>
+</div>
+<div class="flex">
+<!-- Sidebar -->
+<div class="w-64 border-r border-gray-200 p-4 hidden md:block">
+<div class="mb-6">
+<h3 class="text-sm font-medium text-gray-500 mb-3">PLANNINGS</h3>
+<ul class="space-y-2">
+<li class="flex items-center text-primary font-medium">
+<div class="w-5 h-5 flex items-center justify-center mr-2">
+<i class="ri-calendar-line"></i>
+</div>
+<span>Semaine d'études</span>
+</li>
+<li class="flex items-center text-gray-700 hover:text-primary">
+<div class="w-5 h-5 flex items-center justify-center mr-2">
+<i class="ri-calendar-line"></i>
+</div>
+<span>Révisions bac</span>
+</li>
+<li class="flex items-center text-gray-700 hover:text-primary">
+<div class="w-5 h-5 flex items-center justify-center mr-2">
+<i class="ri-calendar-line"></i>
+</div>
+<span>Planning sportif</span>
+</li>
+</ul>
+</div>
+<div class="mb-6">
+<h3 class="text-sm font-medium text-gray-500 mb-3">MODÈLES</h3>
+<ul class="space-y-2">
+<li class="flex items-center text-gray-700 hover:text-primary">
+<div class="w-5 h-5 flex items-center justify-center mr-2">
+<i class="ri-file-list-3-line"></i>
+</div>
+<span>Emploi du temps scolaire</span>
+</li>
+<li class="flex items-center text-gray-700 hover:text-primary">
+<div class="w-5 h-5 flex items-center justify-center mr-2">
+<i class="ri-file-list-3-line"></i>
+</div>
+<span>Planning révisions</span>
+</li>
+<li class="flex items-center text-gray-700 hover:text-primary">
+<div class="w-5 h-5 flex items-center justify-center mr-2">
+<i class="ri-file-list-3-line"></i>
+</div>
+<span>Agenda journalier</span>
+</li>
+</ul>
+</div>
+<div>
+<h3 class="text-sm font-medium text-gray-500 mb-3">PARAMÈTRES</h3>
+<ul class="space-y-2">
+<li class="flex items-center text-gray-700 hover:text-primary">
+<div class="w-5 h-5 flex items-center justify-center mr-2">
+<i class="ri-user-line"></i>
+</div>
+<span>Profil</span>
+</li>
+<li class="flex items-center text-gray-700 hover:text-primary">
+<div class="w-5 h-5 flex items-center justify-center mr-2">
+<i class="ri-settings-3-line"></i>
+</div>
+<span>Préférences</span>
+</li>
+</ul>
+</div>
+</div>
+<!-- Main content -->
+<div class="flex-1 p-6">
+<div class="flex justify-between items-center mb-6">
+<h2 class="text-2xl font-semibold text-gray-900">Semaine d'études</h2>
+<div class="flex space-x-3">
+<button class="bg-white border border-gray-300 rounded-button px-3 py-2 text-gray-700 hover:bg-gray-50 whitespace-nowrap flex items-center">
+<div class="w-5 h-5 flex items-center justify-center mr-1">
+<i class="ri-save-line"></i>
+</div>
+<span>Enregistrer</span>
+</button>
+<button class="bg-primary text-white rounded-button px-3 py-2 hover:bg-opacity-90 whitespace-nowrap flex items-center">
+<div class="w-5 h-5 flex items-center justify-center mr-1">
+<i class="ri-share-line"></i>
+</div>
+<span>Partager</span>
+</button>
+</div>
+</div>
+<div class="mb-6 flex justify-between items-center">
+<div class="flex space-x-2">
+<button class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-button whitespace-nowrap flex items-center">
+<div class="w-5 h-5 flex items-center justify-center mr-1">
+<i class="ri-table-line"></i>
+</div>
+<span>Tableau</span>
+</button>
+<button class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-button whitespace-nowrap flex items-center">
+<div class="w-5 h-5 flex items-center justify-center mr-1">
+<i class="ri-calendar-line"></i>
+</div>
+<span>Calendrier</span>
+</button>
+<button class="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-button whitespace-nowrap flex items-center">
+<div class="w-5 h-5 flex items-center justify-center mr-1">
+<i class="ri-list-check-2"></i>
+</div>
+<span>Liste</span>
+</button>
+</div>
+<div class="flex items-center">
+<button class="p-2 text-gray-700 hover:bg-gray-100 rounded-full">
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-arrow-left-s-line"></i>
+</div>
+</button>
+<span class="mx-2 text-gray-700">16 - 22 Avril 2025</span>
+<button class="p-2 text-gray-700 hover:bg-gray-100 rounded-full">
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-arrow-right-s-line"></i>
+</div>
+</button>
+</div>
+</div>
+<!-- Weekly calendar view -->
+<div class="border border-gray-200 rounded-lg overflow-hidden">
+<div class="grid grid-cols-6 bg-gray-50">
+<div class="p-3 border-b border-r border-gray-200"></div>
+<div class="p-3 text-center font-medium border-b border-r border-gray-200">Lundi</div>
+<div class="p-3 text-center font-medium border-b border-r border-gray-200">Mardi</div>
+<div class="p-3 text-center font-medium border-b border-r border-gray-200">Mercredi</div>
+<div class="p-3 text-center font-medium border-b border-r border-gray-200">Jeudi</div>
+<div class="p-3 text-center font-medium border-b border-gray-200">Vendredi</div>
+</div>
+<div class="grid grid-cols-6">
+<div class="p-3 text-center font-medium border-r border-b border-gray-200">8h - 10h</div>
+<div class="p-2 border-r border-b border-gray-200 calendar-cell">
+<div class="bg-blue-100 p-2 rounded text-sm h-full">
+<div class="font-medium text-blue-800">Mathématiques</div>
+<div class="text-blue-600 text-xs">Salle 302</div>
+</div>
+</div>
+<div class="p-2 border-r border-b border-gray-200 calendar-cell">
+<div class="bg-green-100 p-2 rounded text-sm h-full">
+<div class="font-medium text-green-800">Histoire</div>
+<div class="text-green-600 text-xs">Salle 201</div>
+</div>
+</div>
+<div class="p-2 border-r border-b border-gray-200 calendar-cell"></div>
+<div class="p-2 border-r border-b border-gray-200 calendar-cell">
+<div class="bg-purple-100 p-2 rounded text-sm h-full">
+<div class="font-medium text-purple-800">Anglais</div>
+<div class="text-purple-600 text-xs">Salle 105</div>
+</div>
+</div>
+<div class="p-2 border-b border-gray-200 calendar-cell">
+<div class="bg-yellow-100 p-2 rounded text-sm h-full">
+<div class="font-medium text-yellow-800">Physique</div>
+<div class="text-yellow-600 text-xs">Salle 401</div>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-6">
+<div class="p-3 text-center font-medium border-r border-b border-gray-200">10h - 12h</div>
+<div class="p-2 border-r border-b border-gray-200 calendar-cell">
+<div class="bg-red-100 p-2 rounded text-sm h-full">
+<div class="font-medium text-red-800">Français</div>
+<div class="text-red-600 text-xs">Salle 205</div>
+</div>
+</div>
+<div class="p-2 border-r border-b border-gray-200 calendar-cell">
+<div class="bg-blue-100 p-2 rounded text-sm h-full">
+<div class="font-medium text-blue-800">Mathématiques</div>
+<div class="text-blue-600 text-xs">Salle 302</div>
+</div>
+</div>
+<div class="p-2 border-r border-b border-gray-200 calendar-cell">
+<div class="bg-green-100 p-2 rounded text-sm h-full">
+<div class="font-medium text-green-800">Histoire</div>
+<div class="text-green-600 text-xs">Salle 201</div>
+</div>
+</div>
+<div class="p-2 border-r border-b border-gray-200 calendar-cell"></div>
+<div class="p-2 border-b border-gray-200 calendar-cell">
+<div class="bg-indigo-100 p-2 rounded text-sm h-full">
+<div class="font-medium text-indigo-800">SVT</div>
+<div class="text-indigo-600 text-xs">Salle 402</div>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-6">
+<div class="p-3 text-center font-medium border-r border-b border-gray-200">13h - 15h</div>
+<div class="p-2 border-r border-b border-gray-200 calendar-cell"></div>
+<div class="p-2 border-r border-b border-gray-200 calendar-cell">
+<div class="bg-purple-100 p-2 rounded text-sm h-full">
+<div class="font-medium text-purple-800">Anglais</div>
+<div class="text-purple-600 text-xs">Salle 105</div>
+</div>
+</div>
+<div class="p-2 border-r border-b border-gray-200 calendar-cell">
+<div class="bg-yellow-100 p-2 rounded text-sm h-full">
+<div class="font-medium text-yellow-800">Physique</div>
+<div class="text-yellow-600 text-xs">Salle 401</div>
+</div>
+</div>
+<div class="p-2 border-r border-b border-gray-200 calendar-cell">
+<div class="bg-red-100 p-2 rounded text-sm h-full">
+<div class="font-medium text-red-800">Français</div>
+<div class="text-red-600 text-xs">Salle 205</div>
+</div>
+</div>
+<div class="p-2 border-b border-gray-200 calendar-cell"></div>
+</div>
+<div class="grid grid-cols-6">
+<div class="p-3 text-center font-medium border-r border-b border-gray-200">15h - 17h</div>
+<div class="p-2 border-r border-b border-gray-200 calendar-cell">
+<div class="bg-indigo-100 p-2 rounded text-sm h-full">
+<div class="font-medium text-indigo-800">SVT</div>
+<div class="text-indigo-600 text-xs">Salle 402</div>
+</div>
+</div>
+<div class="p-2 border-r border-b border-gray-200 calendar-cell"></div>
+<div class="p-2 border-r border-b border-gray-200 calendar-cell">
+<div class="bg-pink-100 p-2 rounded text-sm h-full">
+<div class="font-medium text-pink-800">Arts plastiques</div>
+<div class="text-pink-600 text-xs">Salle 103</div>
+</div>
+</div>
+<div class="p-2 border-r border-b border-gray-200 calendar-cell">
+<div class="bg-blue-100 p-2 rounded text-sm h-full">
+<div class="font-medium text-blue-800">Mathématiques</div>
+<div class="text-blue-600 text-xs">Salle 302</div>
+</div>
+</div>
+<div class="p-2 border-b border-gray-200 calendar-cell">
+<div class="bg-orange-100 p-2 rounded text-sm h-full">
+<div class="font-medium text-orange-800">Éducation physique</div>
+<div class="text-orange-600 text-xs">Gymnase</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="py-16 bg-white">
+<div class="container mx-auto px-4">
+<div class="flex flex-col md:flex-row-reverse items-center gap-12">
+<div class="md:w-1/2">
+<h2 class="text-3xl font-bold text-gray-900 mb-6">Personnalisez chaque détail</h2>
+<p class="text-lg text-gray-600 mb-8">Adaptez vos plannings à vos besoins spécifiques avec nos outils de personnalisation avancés.</p>
+<div class="space-y-6">
+<div>
+<h3 class="text-lg font-semibold text-gray-800 mb-4">Thèmes et couleurs</h3>
+<div class="grid grid-cols-2 gap-4 mb-6">
+<button class="p-4 border rounded-lg hover:border-primary transition-colors flex flex-col items-center">
+<div class="w-full h-20 rounded bg-gradient-to-r from-primary to-secondary mb-2"></div>
+<span class="text-sm text-gray-600">Moderne</span>
+</button>
+<button class="p-4 border rounded-lg hover:border-primary transition-colors flex flex-col items-center">
+<div class="w-full h-20 rounded bg-gradient-to-r from-emerald-500 to-teal-500 mb-2"></div>
+<span class="text-sm text-gray-600">Nature</span>
+</button>
+<button class="p-4 border rounded-lg hover:border-primary transition-colors flex flex-col items-center">
+<div class="w-full h-20 rounded bg-gradient-to-r from-rose-500 to-pink-500 mb-2"></div>
+<span class="text-sm text-gray-600">Dynamique</span>
+</button>
+<button class="p-4 border rounded-lg hover:border-primary transition-colors flex flex-col items-center">
+<div class="w-full h-20 rounded bg-[#f8f9fa] border-2 border-dashed border-gray-300 mb-2 flex items-center justify-center">
+<div class="w-6 h-6 flex items-center justify-center text-gray-400">
+<i class="ri-add-line"></i>
+</div>
+</div>
+<span class="text-sm text-gray-600">Personnalisé</span>
+</button>
+</div>
+</div>
+<div>
+<h3 class="text-lg font-semibold text-gray-800 mb-4">Disposition et mise en page</h3>
+<div class="grid grid-cols-3 gap-4 mb-6">
+<button class="aspect-square p-3 border rounded-lg hover:border-primary transition-colors flex flex-col items-center justify-center gap-1">
+<div class="w-6 h-6 flex items-center justify-center text-gray-700">
+<i class="ri-layout-grid-line"></i>
+</div>
+<span class="text-xs text-gray-600">Grille</span>
+</button>
+<button class="aspect-square p-3 border rounded-lg hover:border-primary transition-colors flex flex-col items-center justify-center gap-1">
+<div class="w-6 h-6 flex items-center justify-center text-gray-700">
+<i class="ri-list-check-2"></i>
+</div>
+<span class="text-xs text-gray-600">Liste</span>
+</button>
+<button class="aspect-square p-3 border rounded-lg hover:border-primary transition-colors flex flex-col items-center justify-center gap-1">
+<div class="w-6 h-6 flex items-center justify-center text-gray-700">
+<i class="ri-calendar-line"></i>
+</div>
+<span class="text-xs text-gray-600">Agenda</span>
+</button>
+</div>
+</div>
+<div>
+<h3 class="text-lg font-semibold text-gray-800 mb-4">Personnalisation avancée</h3>
+<div class="space-y-4">
+<div>
+<label class="text-gray-700 mb-2 block">Police de caractères</label>
+<div class="relative">
+<select class="w-full p-2 border border-gray-300 rounded appearance-none pr-8">
+<option>Inter</option>
+<option>Roboto</option>
+<option>Montserrat</option>
+<option>Open Sans</option>
+<option>Raleway</option>
+<option>Poppins</option>
+</select>
+<div class="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+<div class="w-5 h-5 flex items-center justify-center text-gray-500">
+<i class="ri-arrow-down-s-line"></i>
+</div>
+</div>
+</div>
+</div>
+<div>
+<label class="text-gray-700 mb-2 block">Taille des cellules</label>
+<input type="range" class="custom-range" min="0" max="100" value="50">
+</div>
+<div>
+<label class="text-gray-700 mb-2 block">Espacement</label>
+<div class="grid grid-cols-3 gap-2">
+<button class="p-2 border rounded text-sm text-gray-600 hover:border-primary transition-colors">Compact</button>
+<button class="p-2 border rounded text-sm text-gray-600 hover:border-primary transition-colors">Normal</button>
+<button class="p-2 border rounded text-sm text-gray-600 hover:border-primary transition-colors">Large</button>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-gray-700">Arrière-plan personnalisé</span>
+<label class="custom-switch">
+<input type="checkbox">
+<span class="slider"></span>
+</label>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="md:w-1/2 rounded-lg overflow-hidden shadow-lg">
+<img src="https://readdy.ai/api/search-image?query=A%20modern%20interface%20showing%20various%20theme%20customization%20options%20for%20a%20planning%20application.%20The%20screen%20displays%20different%20color%20schemes%2C%20layout%20options%2C%20and%20typography%20settings.%20The%20interface%20has%20a%20clean%2C%20minimalist%20design%20with%20a%20light%20background%20and%20shows%20both%20grid%20and%20list%20view%20options.%20Multiple%20theme%20previews%20are%20visible%20with%20different%20color%20combinations.&width=600&height=800&seq=custom2&orientation=portrait" alt="Personnalisation Planify" class="w-full h-auto object-cover object-top">
+</div>
+</div>
+</div>
+</section>
+<section class="py-16 bg-primary bg-opacity-5">
+<div class="container mx-auto px-4">
+<div class="text-center mb-12">
+<h2 class="text-3xl font-bold text-gray-900 mb-4">Témoignages</h2>
+<p class="text-xl text-gray-600 max-w-3xl mx-auto">Découvrez ce que nos utilisateurs pensent de Planify.</p>
+</div>
+<div class="grid md:grid-cols-3 gap-8">
+<div class="bg-white p-6 rounded-lg shadow-sm">
+<div class="flex text-yellow-400 mb-4">
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-star-fill"></i>
+</div>
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-star-fill"></i>
+</div>
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-star-fill"></i>
+</div>
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-star-fill"></i>
+</div>
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-star-fill"></i>
+</div>
+</div>
+<p class="text-gray-700 mb-6">"Planify a complètement transformé ma façon d'organiser mes cours. L'interface est intuitive et les options de personnalisation sont incroyables. Je recommande à tous les étudiants !"</p>
+<div class="flex items-center">
+<div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center mr-3">
+<div class="w-6 h-6 flex items-center justify-center text-gray-600">
+<i class="ri-user-line"></i>
+</div>
+</div>
+<div>
+<h4 class="font-medium text-gray-900">Marie Dupont</h4>
+<p class="text-sm text-gray-500">Étudiante en médecine</p>
+</div>
+</div>
+</div>
+<div class="bg-white p-6 rounded-lg shadow-sm">
+<div class="flex text-yellow-400 mb-4">
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-star-fill"></i>
+</div>
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-star-fill"></i>
+</div>
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-star-fill"></i>
+</div>
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-star-fill"></i>
+</div>
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-star-fill"></i>
+</div>
+</div>
+<p class="text-gray-700 mb-6">"En tant que professeur, je cherchais un outil pour créer des emplois du temps clairs pour mes élèves. Planify est parfait, avec des exports PDF de qualité et un partage facile par lien."</p>
+<div class="flex items-center">
+<div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center mr-3">
+<div class="w-6 h-6 flex items-center justify-center text-gray-600">
+<i class="ri-user-line"></i>
+</div>
+</div>
+<div>
+<h4 class="font-medium text-gray-900">Thomas Leroy</h4>
+<p class="text-sm text-gray-500">Professeur de mathématiques</p>
+</div>
+</div>
+</div>
+<div class="bg-white p-6 rounded-lg shadow-sm">
+<div class="flex text-yellow-400 mb-4">
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-star-fill"></i>
+</div>
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-star-fill"></i>
+</div>
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-star-fill"></i>
+</div>
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-star-fill"></i>
+</div>
+<div class="w-5 h-5 flex items-center justify-center">
+<i class="ri-star-half-fill"></i>
+</div>
+</div>
+<p class="text-gray-700 mb-6">"L'assistant vocal est une fonctionnalité géniale ! Je peux ajouter des événements à mon planning simplement en parlant. La personnalisation est aussi très poussée, j'adore !"</p>
+<div class="flex items-center">
+<div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center mr-3">
+<div class="w-6 h-6 flex items-center justify-center text-gray-600">
+<i class="ri-user-line"></i>
+</div>
+</div>
+<div>
+<h4 class="font-medium text-gray-900">Sophie Martin</h4>
+<p class="text-sm text-gray-500">Consultante indépendante</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="py-16 bg-white">
+<div class="container mx-auto px-4">
+<div class="bg-primary bg-opacity-5 rounded-2xl p-8 md:p-12">
+<div class="max-w-3xl mx-auto text-center">
+<h2 class="text-3xl font-bold text-gray-900 mb-6">Prêt à mieux organiser votre temps ?</h2>
+<p class="text-xl text-gray-600 mb-8">Rejoignez des milliers d'utilisateurs qui optimisent leur organisation avec Planify.</p>
+<div class="flex flex-col sm:flex-row justify-center gap-4">
+<button class="bg-primary text-white px-6 py-3 rounded-button hover:bg-opacity-90 transition whitespace-nowrap">Commencer gratuitement</button>
+<button class="bg-white text-gray-800 border border-gray-300 px-6 py-3 rounded-button hover:bg-gray-50 transition whitespace-nowrap">Voir les tarifs</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<footer class="bg-gray-900 text-white pt-16 pb-8">
+<div class="container mx-auto px-4">
+<div class="grid md:grid-cols-4 gap-8 mb-12">
+<div>
+<h3 class="text-xl font-['Pacifico'] mb-6">Planify</h3>
+<p class="text-gray-400 mb-6">La solution idéale pour créer et gérer vos plannings personnels et professionnels.</p>
+<div class="flex space-x-4">
+<a href="#" class="text-gray-400 hover:text-white">
+<div class="w-8 h-8 flex items-center justify-center">
+<i class="ri-facebook-fill"></i>
+</div>
+</a>
+<a href="#" class="text-gray-400 hover:text-white">
+<div class="w-8 h-8 flex items-center justify-center">
+<i class="ri-twitter-x-fill"></i>
+</div>
+</a>
+<a href="#" class="text-gray-400 hover:text-white">
+<div class="w-8 h-8 flex items-center justify-center">
+<i class="ri-instagram-fill"></i>
+</div>
+</a>
+<a href="#" class="text-gray-400 hover:text-white">
+<div class="w-8 h-8 flex items-center justify-center">
+<i class="ri-linkedin-fill"></i>
+</div>
+</a>
+</div>
+</div>
+<div>
+<h4 class="text-lg font-semibold mb-4">Produit</h4>
+<ul class="space-y-2">
+<li><a href="#" class="text-gray-400 hover:text-white">Fonctionnalités</a></li>
+<li><a href="#" class="text-gray-400 hover:text-white">Tarifs</a></li>
+<li><a href="#" class="text-gray-400 hover:text-white">Témoignages</a></li>
+<li><a href="#" class="text-gray-400 hover:text-white">Guide d'utilisation</a></li>
+<li><a href="#" class="text-gray-400 hover:text-white">Mises à jour</a></li>
+</ul>
+</div>
+<div>
+<h4 class="text-lg font-semibold mb-4">Ressources</h4>
+<ul class="space-y-2">
+<li><a href="#" class="text-gray-400 hover:text-white">Blog</a></li>
+<li><a href="#" class="text-gray-400 hover:text-white">Modèles</a></li>
+<li><a href="#" class="text-gray-400 hover:text-white">Tutoriels</a></li>
+<li><a href="#" class="text-gray-400 hover:text-white">Centre d'aide</a></li>
+<li><a href="#" class="text-gray-400 hover:text-white">API</a></li>
+</ul>
+</div>
+<div>
+<h4 class="text-lg font-semibold mb-4">Entreprise</h4>
+<ul class="space-y-2">
+<li><a href="#" class="text-gray-400 hover:text-white">À propos</a></li>
+<li><a href="#" class="text-gray-400 hover:text-white">Carrières</a></li>
+<li><a href="#" class="text-gray-400 hover:text-white">Contact</a></li>
+<li><a href="#" class="text-gray-400 hover:text-white">Mentions légales</a></li>
+<li><a href="#" class="text-gray-400 hover:text-white">Confidentialité</a></li>
+</ul>
+</div>
+</div>
+<div class="border-t border-gray-800 pt-8">
+<div class="flex flex-col md:flex-row justify-between items-center">
+<p class="text-gray-400 mb-4 md:mb-0">&copy; 2025 Planify. Tous droits réservés.</p>
+<div class="flex space-x-6">
+<a href="#" class="text-gray-400 hover:text-white">Conditions d'utilisation</a>
+<a href="#" class="text-gray-400 hover:text-white">Politique de confidentialité</a>
+<a href="#" class="text-gray-400 hover:text-white">Cookies</a>
+</div>
+</div>
+</div>
+</div>
+</footer>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+// Custom checkbox functionality
+const customCheckboxes = document.querySelectorAll('.custom-checkbox-input');
+customCheckboxes.forEach(checkbox => {
+checkbox.addEventListener('click', function() {
+this.checked = !this.checked;
+});
+});
+
+// Custom radio functionality
+const customRadios = document.querySelectorAll('.custom-radio-input');
+customRadios.forEach(radio => {
+radio.addEventListener('click', function() {
+const name = this.getAttribute('name');
+if (name) {
+document.querySelectorAll(`.custom-radio-input[name="${name}"]`).forEach(r => {
+r.checked = false;
+});
+}
+this.checked = true;
+});
+});
+
+// Theme customization
+const themeButtons = document.querySelectorAll('.grid-cols-2 button');
+themeButtons.forEach(button => {
+button.addEventListener('click', function() {
+themeButtons.forEach(btn => btn.classList.remove('border-primary'));
+this.classList.add('border-primary');
+});
+});
+
+// Layout customization
+const layoutButtons = document.querySelectorAll('.grid-cols-3 button');
+layoutButtons.forEach(button => {
+button.addEventListener('click', function() {
+layoutButtons.forEach(btn => btn.classList.remove('border-primary'));
+this.classList.add('border-primary');
+});
+});
+
+// Spacing customization
+const spacingButtons = document.querySelectorAll('.grid-cols-3 button');
+spacingButtons.forEach(button => {
+button.addEventListener('click', function() {
+spacingButtons.forEach(btn => btn.classList.remove('border-primary'));
+this.classList.add('border-primary');
+});
+});
+});
+</script>
+</body>
+</html>
+<script>
+  // Ajouter un cours dans le planning
+  function addCourse(course) {
+    const container = document.getElementById('planningContainer');
+    const div = document.createElement('div');
+    div.className = "bg-blue-100 p-4 rounded shadow";
+    div.innerHTML = `
+      <h3 class="text-lg font-semibold text-blue-800">${course.name}</h3>
+      <p class="text-blue-600 text-sm">${course.time} - ${course.room}</p>
+    `;
+    container.appendChild(div);
+  }
+
+  // Charger les cours depuis le localStorage
+  function loadCourses() {
+    const stored = localStorage.getItem('courses');
+    if (stored) {
+      const courses = JSON.parse(stored);
+      courses.forEach(addCourse);
+    }
+  }
+
+  // Sauvegarder un cours
+  function saveCourse(course) {
+    const courses = JSON.parse(localStorage.getItem('courses')) || [];
+    courses.push(course);
+    localStorage.setItem('courses', JSON.stringify(courses));
+  }
+
+  // Quand le formulaire est soumis
+  document.getElementById('courseForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const name = document.getElementById('courseName').value;
+    const time = document.getElementById('courseTime').value;
+    const room = document.getElementById('courseRoom').value;
+    const course = { name, time, room };
+    addCourse(course);
+    saveCourse(course);
+    this.reset();
+  });
+
+  // Charger les cours au démarrage
+  document.addEventListener('DOMContentLoaded', loadCourses);
+</script>
